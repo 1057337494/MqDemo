@@ -16,7 +16,8 @@ namespace MqDemo
 
         public void CapSendWithNotTran()
         {
-            _capBus.Publish($"[{DateTime.Now}]CapSendWithNotTran", DateTime.Now);
+            _capBus.Publish($"CapSendWithNotTran", DateTime.Now);
+            Console.WriteLine("发送消息");
         }
 
     }

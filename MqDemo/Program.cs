@@ -58,6 +58,7 @@ namespace MqDemo
 
 
          services.AddScoped<CapSenderBLL>();
+         services.AddScoped<CapSubBLL>();
          services.AddLogging();
 
          service = services;
