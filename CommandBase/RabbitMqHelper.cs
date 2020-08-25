@@ -1,44 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace CommandBase
 {
     public class RabbitMqHelper
     {
-        public IConnection Conn
+        private static ConnectionFactory _fac = new ConnectionFactory()
+        {
+            HostName = "192.168.0.134",
+            Port = 5672,
+            // VirtualHost = "vir1",
+            UserName = "guest",
+            Password = "guest"
+        };
+
+        private static IConnection _con = _fac.CreateConnection();
+
+        public static IConnection Conn
         {
             get
             {
-                return new RabbitMQ.Client.ConnectionFactory()
-                {
-                    HostName = "localhost",
-                    Port = 5672
-                }.CreateConnection();
+                return _con;
             }
         }
 
+        public const string ExName = "TestExt";
 
-        public void Publish()
-        {
-            var msg = "tstInfo";
-            var queName = "testQue";
-
-           var model= Conn.CreateModel();
-            //消息持久化，防止丢失
-            model.QueueDeclare(queName, true, false, false, null);
-            var properties = model.CreateBasicProperties();
-            properties.Persistent = true;
-            properties.DeliveryMode = 2;
-
-            //消息转换为二进制
-            var msgBody = Encoding.UTF8.GetBytes(msg);
-            //消息发出到队列
-            model.BasicPublish("", queName, properties, msgBody);
-        }
+        public const string QueName = "TestQue";
 
 
+        public const string TopicExName = "TopicEx";
+
+        public const string TopicPaymentQueName = "Topic_Payment";
+        public const string TopicStackQueName = "Topic_Stack";
+        public const string TopicNoticeQueName = "Topic_Notice";
 
     }
 }

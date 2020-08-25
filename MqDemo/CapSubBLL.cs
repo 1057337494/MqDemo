@@ -1,4 +1,6 @@
-﻿using DotNetCore.CAP;
+﻿using CommandBase;
+using DotNetCore.CAP;
+using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,8 +19,10 @@ namespace MqDemo
         [CapSubscribe("CapSendWithNotTran")]
         public void CapSendWithNotTran([FromCap]CapHeader header)
         {
-            Console.WriteLine($"接受到消息{header.Values.Count}");
+            foreach (var item in header.Keys)
+            {
+                Console.WriteLine($"接受到消息{header[item]}");
+            }
         }
-
     }
 }

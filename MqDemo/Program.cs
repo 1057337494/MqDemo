@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using DotNetCore.CAP;
-using DotNetCore.CAP.RabbitMQ;
-using DotNetCore.CAP.MySql;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Threading;
 
 namespace MqDemo
@@ -15,71 +11,92 @@ namespace MqDemo
         static void Main(string[] args)
         {
             IServiceCollection service = new ServiceCollection();
-
-
-
-            IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-
+            IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json").AddCommandLine(args).Build();
             var dbConnection = config.GetSection("ConnectionStrings:MySql").Value;
             var mqConnection = config.GetSection("AppSettings:RabbitMq").Value;
 
-
-
-
             new HostBuilder()
-     .ConfigureServices((hostContext, services) =>
-     {
-
-         services.AddCap(x =>
-         {
-             x.UseMySql(s =>
+             .ConfigureServices((hostContext, services) =>
              {
-                 s.ConnectionString = dbConnection;
-                 s.TableNamePrefix = "testCap";
-             });
-             // x.UsePostgreSql("数据库连接字符串");
+                 services.AddCap(x =>
+                 {
+                     x.UseMySql(s =>
+                     {
+                         s.ConnectionString = dbConnection;
+                         s.TableNamePrefix = "testCap";
+                     });                    
+                     x.UseRabbitMQ(s =>
+                     {
+                         s.HostName = "192.168.0.134";
+                         s.Password = "guest";
+                         s.UserName = "guest";
+                         s.Port = 5672;
+                     });                 
+                     x.UseDashboard();
+                 });
 
-             //如果你使用的 MongoDB，你可以添加如下配置：
-             //x.UseMongoDB("ConnectionStrings");  //注意，仅支持MongoDB 4.0+集群
+                 services.AddScoped<CapSenderBLL>();
+                 services.AddScoped<CapSubBLL>();
+                 services.AddScoped<DirectPublishBLL>();
+                 services.AddScoped<TopicPublishBLL>();
+                 services.AddScoped<SubBLL>();
 
-             //CAP支持 RabbitMQ、Kafka、AzureServiceBus 等作为MQ，根据使用选择配置：
-             x.UseRabbitMQ(s=> {
-                 s.HostName = "192.168.0.134";
-                 s.Password = "guest";
-                 s.UserName = "guest";
-                 s.Port = 5672;
-             
-             });
-             //x.UseKafka("ConnectionStrings");
-             //x.UseAzureServiceBus("ConnectionStrings");
-             x.UseDashboard();
+                 services.AddLogging();
+                 service = services;
+             })
+             .RunConsoleAsync()
+             ;
 
-         });
-
-
-         services.AddScoped<CapSenderBLL>();
-         services.AddScoped<CapSubBLL>();
-         services.AddLogging();
-
-         service = services;
-     })
-     .RunConsoleAsync();
             var build = service.BuildServiceProvider();
-
-
-
-            var bll = build.GetService<CapSenderBLL>();
-            while (true)
+            var type = config.GetSection("type").Value;
+            if ("0".Equals(type))
             {
-                Thread.Sleep(3 * 1000);
-                bll.CapSendWithNotTran();
+                var bll = build.GetService<DirectPublishBLL>();              
+                while (true)
+                {
+
+                    Thread.Sleep(1 * 1000);
+                    var msg = Guid.NewGuid().ToString();
+                    bll.PublishOneInfo(msg);
+                }
+            }
+            else if("1".Equals(type))
+            {
+                // var bll = build.GetService<CapSubBLL>();
+                var bll = build.GetService<SubBLL>();
+                bll.Sub();    
+            }
+            else if ("2".Equals(type))
+            {
+                
+                var bll = build.GetService<TopicPublishBLL>();
+                while (true)
+                {
+
+                    Thread.Sleep(1 * 1000);
+                    var msg = Guid.NewGuid().ToString();
+                    bll.PublishOneInfo(msg);
+                }
+            }
+            else if ("3".Equals(type))
+            {
+                var bll = build.GetService<SubBLL>();
+                bll.PaymentSub();
+            }
+            else if ("4".Equals(type))
+            {
+                // var bll = build.GetService<CapSubBLL>();
+                var bll = build.GetService<SubBLL>();
+                bll.StackSub();
+            }
+            else if ("5".Equals(type))
+            {
+                // var bll = build.GetService<CapSubBLL>();
+                var bll = build.GetService<SubBLL>();
+                bll.NoticeSub();
             }
 
-
-
-
-
-            Console.WriteLine("Hello World!");
+            Console.ReadKey();
         }
     }
 }

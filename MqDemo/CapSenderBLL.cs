@@ -1,4 +1,5 @@
-﻿using DotNetCore.CAP;
+﻿using CommandBase;
+using DotNetCore.CAP;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,6 +20,10 @@ namespace MqDemo
             _capBus.Publish($"CapSendWithNotTran", DateTime.Now);
             Console.WriteLine("发送消息");
         }
+
+
+       
+
 
     }
 }
